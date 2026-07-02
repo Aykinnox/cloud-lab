@@ -1,0 +1,21 @@
+name: Branch pattern check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate source branch name
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          pattern='^phase-[0-9]+/main$'
+          if [[ "$HEAD_REF" =~ $pattern ]]; then
+            echo "Branch '$HEAD_REF' matches required pattern '$pattern'."
+          else
+            echo "::error::Branch '$HEAD_REF' does not match required pattern '$pattern'. PRs into main must come from a branch named phase-<N>/main."
+            exit 1
+          fi
