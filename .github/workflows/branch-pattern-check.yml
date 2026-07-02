@@ -2,7 +2,9 @@ name: Branch pattern check
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - "phase-*/main"
 
 jobs:
   check-branch-name:
@@ -10,12 +12,22 @@ jobs:
     steps:
       - name: Validate source branch name
         env:
+          BASE_REF: ${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
         run: |
-          pattern='^phase-[0-9]+/main$'
-          if [[ "$HEAD_REF" =~ $pattern ]]; then
-            echo "Branch '$HEAD_REF' matches required pattern '$pattern'."
+          if [[ "$BASE_REF" == "main" ]]; then
+            pattern='^phase-[0-9]+/main$'
+          elif [[ "$BASE_REF" =~ ^phase-([0-9]+)/main$ ]]; then
+            phase="${BASH_REMATCH[1]}"
+            pattern="^phase-${phase}/.*$"
           else
-            echo "::error::Branch '$HEAD_REF' does not match required pattern '$pattern'. PRs into main must come from a branch named phase-<N>/main."
+            echo "::error::Unrecognized base branch '$BASE_REF'; no branch pattern rule defined for it."
+            exit 1
+          fi
+
+          if [[ "$HEAD_REF" =~ $pattern ]]; then
+            echo "Branch '$HEAD_REF' matches required pattern '$pattern' for base '$BASE_REF'."
+          else
+            echo "::error::Branch '$HEAD_REF' does not match required pattern '$pattern' for base '$BASE_REF'."
             exit 1
           fi
