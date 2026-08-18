@@ -189,6 +189,29 @@ components:
       - name: wait-for-kafka
         image: busybox:latest
         command: ["sh", "-c", "until nc -z -v -w30 kafka 9092; do echo waiting for kafka; sleep 2; done;"]
+        securityContext:
+          runAsUser: 1654
+          runAsGroup: 1654
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault
+    securityContext:
+      runAsUser: 1654
+      runAsGroup: 1654
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 1654
+
 
   ad:
     enabled: true
@@ -212,6 +235,18 @@ components:
     resources:
       limits:
         memory: 300Mi
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities: 
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 1000
 
   cart:
     enabled: true
@@ -241,6 +276,28 @@ components:
       - name: wait-for-valkey-cart
         image: busybox:latest
         command: ["sh", "-c", "until nc -z -v -w30 valkey-cart 6379; do echo waiting for valkey-cart; sleep 2; done;"]
+        securityContext:
+          runAsUser: 1654
+          runAsGroup: 1654
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault
+          capabilities:
+            drop: ["ALL"]
+    securityContext:
+      runAsUser: 1654
+      runAsGroup: 1654
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 1654
 
   checkout:
     enabled: true
@@ -282,6 +339,28 @@ components:
       - name: wait-for-kafka
         image: busybox:latest
         command: ["sh", "-c", "until nc -z -v -w30 kafka 9092; do echo waiting for kafka; sleep 2; done;"]
+        securityContext:
+          runAsUser: 65532
+          runAsGroup: 65532
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault
+          capabilities:
+            drop: ["ALL"]
+    securityContext:
+      runAsUser: 65532
+      runAsGroup: 65532
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 65532
 
   currency:
     enabled: true
@@ -303,6 +382,18 @@ components:
     resources:
       limits:
         memory: 20Mi
+    securityContext:
+      runAsUser: 65534
+      runAsGroup: 65534
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 65534
 
   email:
     enabled: true
@@ -326,6 +417,18 @@ components:
     resources:
       limits:
         memory: 100Mi
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 1000
 
   fraud-detection:
     enabled: true
@@ -353,6 +456,28 @@ components:
       - name: wait-for-kafka
         image: busybox:latest
         command: ["sh", "-c", "until nc -z -v -w30 kafka 9092; do echo waiting for kafka; sleep 2; done;"]
+        securityContext:
+          runAsUser: 65532
+          runAsGroup: 65532
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault
+          capabilities:
+            drop: ["ALL"]
+    securityContext:
+      runAsUser: 65532
+      runAsGroup: 65532
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 65532
 
   frontend:
     enabled: true
@@ -406,6 +531,14 @@ components:
       runAsUser: 1001  # nextjs
       runAsGroup: 1001
       runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 1001
 
   frontend-proxy:
     enabled: true
@@ -464,13 +597,63 @@ components:
     resources:
       limits:
         memory: 65Mi
+    initContainers:
+      - name: init-frontend-proxy
+        image: ghcr.io/open-telemetry/demo:2.2.0-frontend-proxy
+        command: ["sh", "-c", "cp -ra /home/envoy/* /envoy"]
+        volumeMounts:
+          - name: home
+            mountPath: /envoy
+        securityContext:
+          runAsUser: 101
+          runAsGroup: 101
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
     securityContext:
       runAsUser: 101  # envoy
       runAsGroup: 101
       runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities: 
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 101
+    additionalVolumes:
+      - name: home
+        emptyDir:
+          sizeLimit: 100Mi
+    additionalVolumeMounts:
+      - name: home
+        mountPath: /home/envoy
+
 
   image-provider:
     enabled: true
+    initContainers:
+      - name: init-image-provider
+        image: ghcr.io/open-telemetry/demo:2.2.0-image-provider 
+        command: ["sh", "-c", "cp -r /etc/nginx/* /nginx/"]
+        volumeMounts:
+          - name: nginx-config
+            mountPath: /nginx
+        securityContext:
+          runAsUser: 101
+          runAsGroup: 101
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          seccompProfile:
+            type: RuntimeDefault
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
     useDefault:
       env: true
     service:
@@ -490,9 +673,35 @@ components:
         value: "4317"
       - name: OTEL_COLLECTOR_HOST
         value: $(OTEL_COLLECTOR_NAME)
-    resources:
-      limits:
-        memory: 50Mi
+    securityContext:
+      runAsUser: 101
+      runAsGroup: 101
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 101
+    additionalVolumes:
+      - name: nginx-config
+        emptyDir:
+          sizeLimit: 200Mi
+      - name: nginx-cache
+        emptyDir:
+          sizeLimit: 100Mi
+      - name: tmp
+        emptyDir:
+          sizeLimit: 100Mi
+    additionalVolumeMounts:
+      - name: nginx-config
+        mountPath: /etc/nginx
+      - name: nginx-cache
+        mountPath: /var/cache/nginx
+      - name: tmp
+        mountPath: /tmp
 
   load-generator:
     enabled: true
@@ -518,7 +727,7 @@ components:
       - name: LOCUST_AUTOSTART
         value: "true"
       - name: LOCUST_BROWSER_TRAFFIC_ENABLED
-        value: "true"
+        value: "false"
       - name: PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION
         value: python
       - name: FLAGD_HOST
@@ -532,6 +741,26 @@ components:
     resources:
       limits:
         memory: 1500Mi
+    securityContext:
+      runAsUser: 65534
+      runAsGroup: 65534
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 65534
+    additionalVolumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 100Mi
+    additionalVolumeMounts: 
+      - name: tmp
+        mountPath: /tmp
+      
 
   payment:
     enabled: true
@@ -559,6 +788,14 @@ components:
       runAsUser: 1000  # node
       runAsGroup: 1000
       runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 1000
 
   product-catalog:
     enabled: true
@@ -586,6 +823,18 @@ components:
     resources:
       limits:
         memory: 20Mi
+    securityContext:
+      runAsUser: 65532
+      runAsGroup: 65532
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 65532
 
   product-reviews:
     enabled: true
@@ -627,6 +876,18 @@ components:
     resources:
       limits:
         memory: 100Mi
+    securityContext:
+      runAsUser: 65534
+      runAsGroup: 65534
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 65534
 
   quote:
     enabled: true
@@ -654,6 +915,14 @@ components:
       runAsUser: 33  # www-data
       runAsGroup: 33
       runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 33
 
   recommendation:
     enabled: true
@@ -681,6 +950,18 @@ components:
     resources:
       limits:
         memory: 500Mi            # This is high to enable supporting the recommendationCache feature flag use case
+    securityContext:
+      runAsUser: 65534
+      runAsGroup: 65534
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 65534
 
   shipping:
     enabled: true
@@ -702,6 +983,18 @@ components:
     resources:
       limits:
         memory: 20Mi
+    securityContext:
+      runAsUser: 65532
+      runAsGroup: 65532
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 65532
 
   flagd:
     enabled: true
@@ -760,10 +1053,22 @@ components:
             value: localhost
         resources:
           limits:
-            memory: 250Mi
+            memory: 3Gi
         volumeMounts:
           - name: config-rw
             mountPath: /app/data
+          - name: tmp
+            mountPath: /tmp
+        securityContext:
+          runAsUser: 65532
+          runAsGroup: 65532
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          seccompProfile:
+            type: RuntimeDefault
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
     initContainers:
       - name: init-config
         image: busybox
@@ -773,13 +1078,55 @@ components:
             name: config-ro
           - mountPath: /config-rw
             name: config-rw
+        securityContext:
+          runAsUser: 65532
+          runAsGroup: 65532
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          seccompProfile:
+            type: RuntimeDefault
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
     additionalVolumes:
       - name: config-ro
         configMap:
           name: flagd-config
+      - name: tmp
+        emptyDir:
+          sizeLimit: 100Mi
+    securityContext:
+      runAsUser: 65532
+      runAsGroup: 65532
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 65534
 
   kafka:
     enabled: true
+    initContainers:
+      - name: init-kafka
+        image: ghcr.io/open-telemetry/demo:2.2.0-kafka 
+        command: ["sh", "-c", "cp -r /opt/kafka/config /kafka"]
+        volumeMounts:
+        - name: opt-kafka-config
+          mountPath: /kafka
+        securityContext:
+          runAsUser: 1000  # appuser
+          runAsGroup: 1000
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault
     useDefault:
       env: true
     replicas: 1
@@ -803,6 +1150,8 @@ components:
         value: CONTROLLER
       - name: KAFKA_CONTROLLER_QUORUM_VOTERS
         value: 1@kafka:9093
+      - name: KAFKA_LOG_DIRS
+        value: /var/log/kafka
     resources:
       limits:
         memory: 700Mi
@@ -810,6 +1159,32 @@ components:
       runAsUser: 1000  # appuser
       runAsGroup: 1000
       runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 1000
+    additionalVolumes: 
+      - name: opt-kafka-config
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: kafka-logs
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: opt-kafka-logs
+        emptyDir:
+          sizeLimit: 500Mi
+    additionalVolumeMounts:
+      - name: opt-kafka-config
+        mountPath: /opt/kafka/config
+      - name: kafka-logs
+        mountPath: /var/log/kafka
+      - name: opt-kafka-logs
+        mountPath: /opt/kafka/logs
+    
 
   llm:
     enabled: true
@@ -824,6 +1199,18 @@ components:
         value: flagd
       - name: FLAGD_PORT
         value: "8013"
+    securityContext:
+      runAsUser: 65534
+      runAsGroup: 65534
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 65534
 
   postgresql:
     enabled: true
@@ -875,6 +1262,25 @@ components:
     resources:
       limits:
         memory: 100Mi
+    securityContext:
+      runAsUser: 999
+      runAsGroup: 999
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 999
+    additionalVolumes:
+      - name: var-run-postgresql
+        emptyDir:
+          sizeLimit: 100Mi
+    additionalVolumeMounts:
+      - name: var-run-postgresql
+        mountPath: /var/run/postgresql
 
   valkey-cart:
     enabled: true
@@ -901,6 +1307,21 @@ components:
       runAsUser: 999  # valkey
       runAsGroup: 1000
       runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 1000
+    additionalVolumes:
+      - name: data
+        emptyDir:
+          sizeLimit: 500Mi
+    additionalVolumeMounts:
+      - name: data
+        mountPath: /data
 
 opentelemetry-collector:
   enabled: true
@@ -967,7 +1388,6 @@ opentelemetry-collector:
           endpoint: http://opensearch:9200
           tls:
             insecure: true
-
     processors:
       memory_limiter:
         check_interval: 5s
@@ -1030,6 +1450,18 @@ opentelemetry-collector:
                     protocol: http/protobuf
                     endpoint: http://otel-collector:4318
                     insecure: true
+  podSecurityContext:
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    runAsNonRoot: true
+  securityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    capabilities:
+      drop: ["ALL"]
 
 jaeger:
   enabled: true
@@ -1053,6 +1485,20 @@ jaeger:
     resources:
       limits:
         memory: 600Mi
+    securityContext:
+      runAsUser: 10001
+      runAsGroup: 10001
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
+    podSecurityContext:
+      fsGroup: 10001
+
+
   userconfig:
     service:
       extensions: [jaeger_storage, jaeger_query, healthcheckv2]
@@ -1114,6 +1560,8 @@ jaeger:
 
 prometheus:
   enabled: true
+  securityContext:
+
   alertmanager:
     enabled: false
   configmapReload:
@@ -1127,6 +1575,18 @@ prometheus:
     enabled: false
   server:
     fullnameOverride: prometheus
+    securityContext:
+      runAsUser: 65534
+      runAsGroup: 65534
+      fsGroup: 65534
+      runAsNonRoot: true
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: ["ALL"]
     extraFlags:
       - "enable-feature=exemplar-storage"
       - "web.enable-otlp-receiver"
@@ -1205,9 +1665,38 @@ grafana:
       limits:
         cpu: 150m
         memory: 256Mi
+    securityContext:
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop: ["ALL"]
   resources:
     limits:
-      memory: 300Mi
+      memory: 512Mi
+  podSecurityContext:
+    runAsUser: 472
+    runAsGroup: 0
+    fsGroup: 472
+    runAsNonRoot: true
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+    seccompProfile:
+      type: RuntimeDefault
+  extraVolumes:
+    - name: tmp
+      emptyDir:
+        sizeLimit: 100Mi
+  extraVolumeMounts:
+    - name: tmp
+      mountPath: /tmp
 
 opensearch:
   enabled: true
@@ -1216,6 +1705,7 @@ opensearch:
   nodeGroup: otel-demo
   singleNode: true
   opensearchJavaOpts: "-Xms400m -Xmx400m"
+  command: ["sh", "-c", "sleep infinity"]
   persistence:
     enabled: false
   extraEnvs:
@@ -1228,3 +1718,54 @@ opensearch:
   resources:
     limits:
       memory: 1100Mi
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    seccompProfile:
+      type: RuntimeDefault
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: ["ALL"]
+  podSecurityContext:
+    fsGroup: 1000
+  extraVolumes:
+  - name: tmp
+    emptyDir:
+      sizeLimit: 100Mi
+  - name: logs
+    emptyDir:
+      sizeLimit: 100Mi
+  - name: opensearch-config
+    emptyDir:
+      sizeLimit: 100Mi
+  - name: opensearch-data
+    emptyDir:
+      sizeLimit: 100Mi
+  extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp
+  - name: logs
+    mountPath: /usr/share/opensearch/logs
+  - name: opensearch-config
+    mountPath: /usr/share/opensearch/config
+  - name: opensearch-data
+    mountPath: /usr/share/opensearch/data
+  extraInitContainers:
+  - name: init-opensearch
+    image: opensearchproject/opensearch:3.6.0
+    command: ["sh", "-c", "cp -ra /usr/share/opensearch/config/* /config"]
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop: ["ALL"]
+    volumeMounts:
+    - name: opensearch-config
+      mountPath: /config

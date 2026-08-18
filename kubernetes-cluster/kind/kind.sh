@@ -14,12 +14,28 @@ usage() {
   exit 1
 }
 
+require_tools() {
+  for bin in colima kind kubectl helm docker; do
+    command -v "$bin" >/dev/null 2>&1 || { echo "error: '$bin' not found in PATH" >&2; exit 1; }
+  done
+}
+
 start_colima() {
   if ! colima status --profile "$COLIMA_PROFILE" &>/dev/null; then
-    colima start --profile "$COLIMA_PROFILE" --cpu 4 --memory 8 --disk 60
+    colima start --profile "$COLIMA_PROFILE" --cpu 4 --memory 12 --disk 60
   else
     echo "Colima profile '$COLIMA_PROFILE' already running"
   fi
+}
+
+tune_vm_sysctls() {
+  # The kind nodes share the Colima VM kernel. otel-demo launches ~25 pods,
+  # several of which open inotify watchers (flagd, config reloaders); the VM
+  # default of 128 inotify instances is exhausted, breaking flagd with
+  # "too many open files". Raise it on the VM (not per-node, not in kind).
+  # A fresh VM resets this, so re-apply on every create. watches is left alone
+  # (its default of ~1M is already sufficient).
+  colima ssh --profile "$COLIMA_PROFILE" -- sudo sysctl -w fs.inotify.max_user_instances=512
 }
 
 create_cluster() {
@@ -30,38 +46,44 @@ create_cluster() {
 }
 
 install_cilium() {
-  helm repo add cilium https://helm.cilium.io/
-  helm install cilium cilium/cilium --version 1.19.5 \
-   --namespace kube-system \
-   --set image.pullPolicy=IfNotPresent \
-   --set ipam.mode=kubernetes
+  helm repo add cilium https://helm.cilium.io/ --force-update
+  helm upgrade --install cilium cilium/cilium --version 1.19.5 \
+    --namespace kube-system \
+    --set image.pullPolicy=IfNotPresent \
+    --set ipam.mode=kubernetes
 }
 
 case "$ACTION" in
-  create)
-    start_colima
-    existing_nodes="$(docker ps -a --filter label=io.x-k8s.kind.cluster=kind --format '{{.Names}}')"
-    if [ -z "$existing_nodes" ]; then
+create)
+  require_tools
+  start_colima
+  tune_vm_sysctls
+  existing_nodes="$(docker ps -a --filter label=io.x-k8s.kind.cluster=kind --format '{{.Names}}')"
+  if [ -z "$existing_nodes" ]; then
+    create_cluster
+  else
+    echo "Cluster 'kind' already exists, ensuring nodes are running"
+    if ! echo "$existing_nodes" | xargs -r docker start; then
+      echo "Existing nodes are unhealthy, recreating cluster"
+      kind delete cluster --name kind
       create_cluster
-    else
-      echo "Cluster 'kind' already exists, ensuring nodes are running"
-      if ! echo "$existing_nodes" | xargs -r docker start; then
-        echo "Existing nodes are unhealthy, recreating cluster"
-        kind delete cluster --name kind
-        create_cluster
-      fi
     fi
-    kind export kubeconfig --name kind
-    kubectl cluster-info --context kind-kind
-    install_cilium
-    ;;
-  destroy)
-    kind delete cluster --name kind
-    if [ "$FLAG" = "--vm" ]; then
-      colima delete --profile "$COLIMA_PROFILE" -f
-    fi
-    ;;
-  *)
-    usage
-    ;;
+  fi
+  kind export kubeconfig --name kind
+  kubectl cluster-info --context kind-kind
+  install_cilium
+  ;;
+destroy)
+  require_tools
+  kind delete cluster --name kind
+  if [ "$FLAG" = "--vm" ]; then
+    colima delete --profile "$COLIMA_PROFILE" -f
+  fi
+  ;;
+-h | --help)
+  usage
+  ;;
+*)
+  usage
+  ;;
 esac
