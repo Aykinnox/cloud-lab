@@ -1,0 +1,3 @@
+# Helm dependency artifacts — rebuilt locally via `helm dependency build`
+helm/opentelemetry-demo/charts/
+helm/opentelemetry-demo/Chart.lock
